@@ -114,7 +114,7 @@ function draw() {
     gl.enableVertexAttribArray(ctx.aVertexColorId);
 
     // draw rectangle unfilled
-    //gl.drawArrays(gl.LINE_LOOP, 0, 4)
+    // gl.drawArrays(gl.LINE_LOOP, 0, 4)
 
     // draw rectangle filled
     // gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
