@@ -24,21 +24,28 @@ var rectangleObject = {
     buffer: -1
 };
 
-// coordinates of ball and paddles
-var ball = {
-    x_pos: 0,
-    y_pos: 0
+// coordinates of game elements
+var game = {
+    ball : {
+        position: [-300, 0],
+        size: [10,10]
+    },
+    paddle_left : {
+        position: [-380, 0],
+        size: [10,100],
+        direction:1
+    },
+    paddle_right : {
+        position: [380, 0],
+        size: [10, 100],
+        direction: 1
+    },
+    middle_lane : {
+        position: [-2,300],
+        size: [4, 1200]
+    }
 };
 
-var paddle_left = {
-    x_pos: 0,
-    y_pos: 0
-};
-
-var paddle_right = {
-    x_pos: 0,
-    y_pos: 0
-};
 
 /**
  * Startup function to be called when the body is loaded
@@ -106,13 +113,30 @@ function setUpBuffers(){
 /**
  * Draw shape using model matrix
  */
-function drawShape(position, size) {
+function drawShape(shape) {
     // draw rectangle using model matrix
     var modelMat = mat3.create();
-    mat3.fromTranslation(modelMat, position);
-    mat3.scale(modelMat, modelMat, size);
+    mat3.fromTranslation(modelMat, shape.position);
+    mat3.scale(modelMat, modelMat, shape.size);
     gl.uniformMatrix3fv(ctx.uModelMatId, false, modelMat);
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+}
 
+/**
+ * Calculate movements of the different shapes
+ */
+function calculateMovements() {
+    // left paddle
+    if (Math.abs(game.paddle_left.position[1]) > (300 - game.paddle_left.size[1]/2)) {
+        game.paddle_left.position[1] < 0 ? game.paddle_left.direction = 1 : game.paddle_left.direction = -1;
+    }
+    game.paddle_left.position[1] += (game.paddle_left.direction * 5);
+
+    // right paddle
+    if (Math.abs(game.paddle_right.position[1]) > (300 - game.paddle_right.size[1]/2)) {
+        game.paddle_right.position[1] < 0 ? game.paddle_right.direction = 1 : game.paddle_right.direction = -1;
+    }
+    game.paddle_right.position[1] += (game.paddle_right.direction * 5);
 }
 
 /**
@@ -131,20 +155,17 @@ function draw() {
     // set the color of the shapes
     gl.uniform4f(ctx.uColorId, 1, 1, 1, 1);
 
-    //draw line in the middle
-    drawShape([-2,300], [4,1200]);
-    gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+    // calculate movements
+    calculateMovements()
 
-    // draw paddles
-    drawShape([380,200], [10,100]);
-    gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+    // draw shapes
+    drawShape(game.middle_lane);
+    drawShape(game.paddle_left);
+    drawShape(game.paddle_right);
+    drawShape(game.ball);
 
-    drawShape([-380,-200], [10,100]);
-    gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
-
-    // draw ball
-    drawShape([-200,-100], [10,10]);
-    gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+    // animation loop
+    requestAnimationFrame(draw);
 }
 
 // Key Handling
