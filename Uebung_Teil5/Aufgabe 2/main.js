@@ -1,0 +1,167 @@
+//
+// Computer Graphics
+//
+// WebGL Exercises
+//
+
+// Register function to call after document has loaded
+window.onload = startup;
+
+// the gl object is saved globally
+var gl;
+
+// we keep all local parameters for the program in a single object
+var ctx = {
+    canvas: null,
+    shaderProgram: -1,
+    vPositionAttributeLocation: -1,
+    vTextureCoordAttributeLocation: -1,
+    wMatrixUniformLocation: -1,
+    viewMatrixUniformLocation: -1,
+    projMatrixUniformLocation: -1,
+    boxTexture: -1
+};
+
+
+/**
+ * Startup function to be called when the body is loaded
+ */
+function startup() {
+    "use strict";
+    ctx.canvas = document.getElementById("myCanvas");
+    gl = createGLContext(ctx.canvas);
+    initGL();
+    draw();
+}
+
+/**
+ * InitGL should contain the functionality that needs to be executed only once
+ */
+function initGL() {
+    "use strict";
+
+    ctx.shaderProgram = loadAndCompileShaders(gl, 'VertexShader.glsl', 'FragmentShader.glsl');
+
+    // make background of canvas grey
+    gl.clearColor(0.8, 0.8, 0.8, 1.0);
+
+    gl.frontFace(gl.CCW);
+    gl.cullFace(gl.BACK);
+    gl.enable(gl.CULL_FACE);
+    gl.enable(gl.DEPTH_TEST);
+
+    setUpBuffers();
+    setUpAttributesAndUniforms();
+    setUpTexture();
+}
+
+/**
+ * Setup all the attribute and uniform variables
+ */
+function setUpAttributesAndUniforms() {
+    "use strict";
+
+    // get vertex shader attribute for vertex position
+    ctx.vPositionAttributeLocation = gl.getAttribLocation(ctx.shaderProgram, "vertexPosition");
+    gl.vertexAttribPointer(ctx.vPositionAttributeLocation, 3, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
+    gl.enableVertexAttribArray(ctx.vPositionAttributeLocation);
+
+    // get vertex shader attribute for vertex textures
+    ctx.vTextureCoordAttributeLocation = gl.getAttribLocation(ctx.shaderProgram, "verTextCoordinates");
+    gl.vertexAttribPointer(ctx.vTextureCoordAttributeLocation, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT)
+    gl.enableVertexAttribArray(ctx.vTextureCoordAttributeLocation);
+
+    // get uniform attributes for matrices
+    ctx.wMatrixUniformLocation = gl.getUniformLocation(ctx.shaderProgram, "worldMatrix");
+    ctx.viewMatrixUniformLocation = gl.getUniformLocation(ctx.shaderProgram, "viewMatrix");
+    ctx.projMatrixUniformLocation = gl.getUniformLocation(ctx.shaderProgram, "projMatrix");
+}
+
+/**
+ * Setup texture
+ */
+function setUpTexture(){
+    ctx.boxTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, ctx.boxTexture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById("texture"));
+    gl.bindTexture(gl.TEXTURE_2D, null);
+}
+
+/**
+ * Setup the buffers to use.
+ */
+function setUpBuffers(){
+    "use strict";
+
+    // bind and fill buffer for vertices
+    var vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(getCubeVertices()), gl.STATIC_DRAW);
+
+    // bind and fill buffer for indices
+    var indicesBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(getCubeIndices()), gl.STATIC_DRAW);
+
+}
+
+/**
+ * Draw the scene.
+ */
+function draw() {
+    "use strict";
+    console.log("Drawing");
+
+    // matrices
+    var worldMatrix = mat4.create();
+    var viewMatrix = mat4.create();
+    var projMatrix = mat4.create();
+    var matrix = mat4.create();
+
+    // rotation matrices
+    var xRotation = mat4.create();
+    var zRotation = mat4.create();
+
+    // make the world matrix an identity matrix (means no operation is done)
+    mat4.identity(worldMatrix);
+    // define the point of the viewer/camera using a matrix
+    mat4.lookAt(viewMatrix, [2, -4, 3], [0, 0 ,0], [0, 0, 1])
+    // define the projection matrix used to project the 3d shape to the 2D canvas
+    mat4.perspective(projMatrix, glMatrix.toRadian(45), ctx.canvas.clientWidth / ctx.canvas.clientHeight, 0.1, 1000.0);
+
+    gl.uniformMatrix4fv(ctx.wMatrixUniformLocation, false, worldMatrix);
+    gl.uniformMatrix4fv(ctx.viewMatrixUniformLocation, false, viewMatrix);
+    gl.uniformMatrix4fv(ctx.projMatrixUniformLocation, false, projMatrix);
+
+    mat4.identity(matrix)
+
+    // this controls how much the cube is rotated (in given axis)
+    var xAngle = 0;
+    var zAngle = 0;
+
+    var rotate = function() {
+        xAngle = performance.now() / 1000 / Math.PI;
+        zAngle = performance.now() / 1000 / Math.PI;
+
+        // rotate
+        mat4.rotate(xRotation, matrix, xAngle, [1, 0, 0]);
+        mat4.rotate(zRotation, matrix, zAngle, [0, 0, 1]);
+
+        mat4.mul(worldMatrix, xRotation, zRotation);
+
+        gl.uniformMatrix4fv(ctx.wMatrixUniformLocation, false, worldMatrix);
+        gl.clearColor(0.8, 0.8, 0.8, 1.0);
+        gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+
+        gl.bindTexture(gl.TEXTURE_2D, ctx.boxTexture);
+        gl.activeTexture(gl.TEXTURE0);
+
+        gl.drawElements(gl.TRIANGLES, getCubeIndices().length, gl.UNSIGNED_SHORT, 0);
+        requestAnimationFrame(rotate);
+    }
+    requestAnimationFrame(rotate);
+}
