@@ -78,7 +78,7 @@ function SolidSphere(gl, latitudeBands, longitudeBands, color) {
 
         // color is directly specified as an attribute here, as it is valid for the whole object
         gl.disableVertexAttribArray(aVertexColorId);
-        gl.vertexAttrib3f(aVertexColorId, 0, 1, 0);
+        gl.vertexAttrib3f(aVertexColorId, 1, 0, 0);
 
         // normal
         gl.bindBuffer(gl.ARRAY_BUFFER, this.bufferNormals);

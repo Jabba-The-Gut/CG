@@ -51,19 +51,19 @@ function initGL() {
 
     // define objects to be drawn
     objectsToDraw.cube = new SolidCube(gl,
-        [1.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0],
+        [1.0, 0.0, 1.0],
+        [1.0, 0.0, 1.0],
         [0.0, 0.0, 1.0],
         [1.0, 1.0, 0.0],
         [0.0, 1.0, 1.0],
-        [1.0, 0.0, 1.0]);
+        [0.0, 1.0, 0.0]);
     objectsToDraw.sphere = new SolidSphere(gl, 50, 50);
 
     // enable z buffer
     gl.enable(gl.DEPTH_TEST);
 
     // set the clear color here
-    gl.clearColor(0.8, 0.8, 0.8, 1.0);
+    gl.clearColor(0.2, 0.2, 0.2, 1.0);
 
 }
 
@@ -105,7 +105,7 @@ function draw() {
 
     // setup light
     gl.uniform1i(ctx.uEnableLightingId, 1) // enable lightning
-    gl.uniform3fv(ctx.uLightPositionId, [0, -1, 0]) // light position
+    gl.uniform3fv(ctx.uLightPositionId, [4, 4, -7]) // light position
     gl.uniform3fv(ctx.uLightColorId, [1, 1, 1]) // color of light (white)
 
     gl.uniformMatrix4fv(ctx.uProjectionMatrixId, false, projectionMatrix);
